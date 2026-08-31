@@ -65,7 +65,7 @@ if player_name == "":
 print()
 print("Welcome, " + player_name + ".")
 print("You are standing in a dusty hall. There is a door NORTH")
-print("and a rug on the floor you could LOOK under.")
+print("There is a rug on the floor you could LOOK under")
 say("Type HELP if you get stuck, or QUIT to give up.")
 
 
@@ -87,6 +87,7 @@ while True:
 
     # -- the hall -------------------------------------------
     elif room == "hall":
+
         if command == "look":
             if has_key:
                 say("Just a rug, and the hole where the key was.")
@@ -120,7 +121,7 @@ while True:
         elif command == "open vault":
             if has_key:
                 print("The key turns. The door swings open.")
-                print("Inside: absolutely nothing. Someone beat you here.")
+                print("Inside: absolutely nothing. Someone beat you here, but there is a weird lock on the wall")
                 say("You win anyway, " + player_name + " — in " + str(moves) + " moves.")
                 break
             else:
