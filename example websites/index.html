@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Low Poly Motion Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <main class="page-shell">
+    <header class="site-header reveal">
+      <a class="wordmark" href="#top" aria-label="Low Poly Motion Lab home">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        <span>LP / MOTION</span>
+      </a>
+      <nav class="site-nav" aria-label="Page sections">
+        <a href="#principles">Principles</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#playground">Playground</a>
+      </nav>
+    </header>
+
+    <section class="hero" id="top">
+      <div class="hero-copy reveal reveal-delay-1">
+        <p class="eyebrow">CSS animation field notes / 01</p>
+        <h1>Make the <span>flat</span> world move.</h1>
+        <p class="hero-text">A small, tactile collection of modern CSS motion patterns built from flexbox, transforms,
+          keyframes, and polygon geometry.</p>
+        <a class="button" href="#gallery">Explore the motion <span aria-hidden="true">↘</span></a>
+      </div>
+      <div class="hero-scene reveal reveal-delay-2" aria-label="Animated low-poly scene" role="img">
+        <div class="hero-sun"></div>
+        <div class="hero-mountain hero-mountain-back"></div>
+        <div class="hero-mountain hero-mountain-front"></div>
+        <div class="hero-orbit hero-orbit-one"></div>
+        <div class="hero-orbit hero-orbit-two"></div>
+        <div class="hero-spark spark-one"></div>
+        <div class="hero-spark spark-two"></div>
+        <div class="hero-spark spark-three"></div>
+      </div>
+    </section>
+
+    <section class="principles section-block" id="principles">
+      <div class="section-heading reveal">
+        <p class="eyebrow">01 / The setup</p>
+        <h2>Motion has a shape.</h2>
+        <p>Every example below is a regular flex item. The visual character comes from one small geometric rule and one
+          focused motion rule.</p>
+      </div>
+      <div class="principle-row">
+        <article class="principle-card reveal reveal-delay-1">
+          <span class="card-number">01</span>
+          <div class="mini-shape mini-shape-drift"></div>
+          <h3>Give it a path</h3>
+          <p>Use <code>transform</code> to move, rotate, and scale without disturbing the flex layout.</p>
+        </article>
+        <article class="principle-card reveal reveal-delay-2">
+          <span class="card-number">02</span>
+          <div class="mini-shape mini-shape-morph"></div>
+          <h3>Give it a pulse</h3>
+          <p>Use <code>@keyframes</code> for loops that make a polygon feel alive and dimensional.</p>
+        </article>
+        <article class="principle-card reveal reveal-delay-3">
+          <span class="card-number">03</span>
+          <div class="mini-shape mini-shape-hover"></div>
+          <h3>Give it a response</h3>
+          <p>Use <code>transition</code> for direct feedback when a pointer meets the surface.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="gallery section-block" id="gallery">
+      <div class="section-heading reveal">
+        <p class="eyebrow">02 / The gallery</p>
+        <h2>Six ways to move a polygon.</h2>
+      </div>
+      <div class="motion-grid">
+        <article class="motion-card card-drift reveal reveal-delay-1">
+          <div class="motion-visual">
+            <div class="poly poly-drift"></div>
+          </div>
+          <div class="motion-meta"><span>Transform</span><span>01</span></div>
+          <h3>Drift</h3>
+          <p>A slow translation and tilt creates a floating paper-cut shape.</p>
+        </article>
+        <article class="motion-card card-morph reveal reveal-delay-2">
+          <div class="motion-visual">
+            <div class="poly poly-morph"></div>
+          </div>
+          <div class="motion-meta"><span>Clip-path</span><span>02</span></div>
+          <h3>Morph</h3>
+          <p>Change the polygon points to turn one crystalline silhouette into another.</p>
+        </article>
+        <article class="motion-card card-orbit reveal reveal-delay-3">
+          <div class="motion-visual">
+            <div class="poly poly-orbit"></div><i class="orbit-dot"></i>
+          </div>
+          <div class="motion-meta"><span>Rotate</span><span>03</span></div>
+          <h3>Orbit</h3>
+          <p>A tiny satellite follows a circular path around a steady center.</p>
+        </article>
+        <article class="motion-card card-pulse reveal reveal-delay-1">
+          <div class="motion-visual">
+            <div class="poly poly-pulse"></div>
+          </div>
+          <div class="motion-meta"><span>Scale</span><span>04</span></div>
+          <h3>Pulse</h3>
+          <p>Layered opacity and scale turn a simple shape into a soft signal.</p>
+        </article>
+        <article class="motion-card card-hover reveal reveal-delay-2">
+          <div class="motion-visual">
+            <div class="poly poly-hover"></div><span class="hover-label">hover</span>
+          </div>
+          <div class="motion-meta"><span>Transition</span><span>05</span></div>
+          <h3>Respond</h3>
+          <p>Hover the panel to see the shape lift, sharpen, and change its color.</p>
+        </article>
+        <article class="motion-card card-shimmer reveal reveal-delay-3">
+          <div class="motion-visual">
+            <div class="poly poly-shimmer"></div>
+          </div>
+          <div class="motion-meta"><span>Gradient</span><span>06</span></div>
+          <h3>Shimmer</h3>
+          <p>A moving highlight travels across the facets like a passing light.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="playground section-block" id="playground">
+      <div class="section-heading reveal">
+        <p class="eyebrow">03 / The playground</p>
+        <h2>Flex is the stage.</h2>
+        <p>Resize the viewport or focus the controls. The row wraps, the cards keep their rhythm, and every motion stays
+          CSS-only.</p>
+      </div>
+      <div class="playground-panel reveal reveal-delay-1">
+        <div class="flex-stage">
+          <div class="stage-label">display: flex</div>
+          <div class="stage-shape stage-shape-one"></div>
+          <div class="stage-shape stage-shape-two"></div>
+          <div class="stage-shape stage-shape-three"></div>
+          <div class="stage-shape stage-shape-four"></div>
+        </div>
+        <div class="playground-note">
+          <span class="status-dot"></span>
+          <p>Flex children / <strong>04</strong></p>
+          <p>Animation state / <strong>looping</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <span>LP / MOTION</span>
+      <span>Built with HTML + CSS only</span>
+    </footer>
+  </main>
+</body>
+
+</html>
