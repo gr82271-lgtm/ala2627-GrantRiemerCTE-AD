@@ -60,9 +60,10 @@ main{ max-width: 60rem; margin: 0 auto; padding: 2rem 1.25rem; }
 
 .cards {
   display: flex;
-  flex-direction: row;
+  Padding: 32px;
+  flex-direction: column;
   justify-content: flex-start;
-  align-items: stretch;
+  align-items: center;
 }
 
 .card{
