@@ -58,13 +58,7 @@ main{ max-width: 60rem; margin: 0 auto; padding: 2rem 1.25rem; }
    Work out which is which before you type anything.
    ------------------------------------------------------------ */
 
-.cards {
-  display: flex;
-  Padding: 32px;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-}
+https://gr82271-lgtm.github.io/ala2627-GrantRiemerCTE-AD/day-24/index.html
 
 .card{
   background: #ffffff;
@@ -74,6 +68,13 @@ main{ max-width: 60rem; margin: 0 auto; padding: 2rem 1.25rem; }
 
   /* YOUR CODE HERE — how does a card take an equal share? */
 
+}
+
+.cards {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: stretch;
 }
 
 .card h2{ margin: 0 0 .5rem; font-size: 1.1rem; }
