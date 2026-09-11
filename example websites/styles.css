@@ -573,6 +573,7 @@ code {
   font-size: .62rem;
 }
 
+/* Circle button for the playground panel, fixed to the bottom right of the viewport. */
 .circle-button {
   position: fixed;
   right: 24px;
@@ -583,12 +584,19 @@ code {
   padding: 0;
   border: 1px solid var(--ink);
   border-radius: 50%;
-  color: var(--paper);
+  color: #ff4c31;
   background: var(--ink);
   font: .68rem var(--mono);
   text-transform: uppercase;
   cursor: pointer;
+
+transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
+/* 2. Define the changes inside the :hover pseudo-class */
+.zoom-card:hover {
+  transform: scale(1.05); /* Scales up by 5% */
+  box-shadow: 0 10px 20px rgba(82, 23, 23, 0.2); /* Deepens shadow */
 
 .circle-button:focus-visible {
   outline: 3px solid var(--coral);
