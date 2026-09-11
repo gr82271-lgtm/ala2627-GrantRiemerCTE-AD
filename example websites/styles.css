@@ -573,6 +573,28 @@ code {
   font-size: .62rem;
 }
 
+.circle-button {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  color: var(--paper);
+  background: var(--ink);
+  font: .68rem var(--mono);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.circle-button:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 4px;
+}
+
 .reveal {
   animation: reveal-up .8s both cubic-bezier(.2, .8, .2, 1);
 }
