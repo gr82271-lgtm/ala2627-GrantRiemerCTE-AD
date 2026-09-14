@@ -2,6 +2,7 @@
   --ink: #172b2a;
   --muted: #58716d;
   --accent: #447e36;
+  --hot: #e96948;
   --mint: #cfe9dc;
   --cream: #f2efe6;
   --glass: rgba(255, 255, 255, 0.4);
@@ -24,7 +25,8 @@ body {
   margin: 0;
   min-width: 320px;
   background: var(--mint);
-  background-image: radial-gradient(circle at 15% 10%, rgba(255, 255, 255, .75), transparent 28rem), radial-gradient(circle at 95% 70%, rgba(233, 105, 72, .17), transparent 30rem);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, .25) 25%, transparent 25%), linear-gradient(315deg, rgba(255, 255, 255, .14) 25%, transparent 25%), radial-gradient(circle at 15% 10%, rgba(255, 255, 255, .75), transparent 28rem), radial-gradient(circle at 95% 70%, rgba(233, 105, 72, .17), transparent 30rem);
+  background-size: 52px 52px, 52px 52px, auto, auto;
   color: var(--ink);
   font: 1rem/1.6 var(--body);
 }
@@ -74,6 +76,24 @@ nav {
   font-size: .82rem;
 }
 
+.signal-toggle {
+  padding: .25rem .1rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+}
+
+.signal-toggle:first-letter {
+  color: var(--hot);
+}
+
+.signal-toggle[aria-pressed="true"] {
+  color: var(--ink);
+}
+
 nav a {
   text-decoration: none;
 }
@@ -97,6 +117,7 @@ nav a:not(.nav-contact) {
   min-height: 610px;
   padding: 7rem 4vw 8rem;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .hero-copy {
@@ -267,8 +288,75 @@ h2 em {
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--hot);
   box-shadow: 0 0 0 .5rem rgba(233, 105, 72, .18);
+  animation: orbit-pulse 4s ease-in-out infinite;
+}
+
+.poly-shard {
+  position: absolute;
+  z-index: -1;
+  opacity: .58;
+  filter: drop-shadow(12px 18px 14px rgba(23, 43, 42, .1));
+  animation: shard-drift 9s ease-in-out infinite;
+}
+
+.poly-shard-one {
+  right: 3%;
+  top: 8%;
+  width: 180px;
+  height: 230px;
+  background: linear-gradient(145deg, #f2efe6 0 38%, #9ecdb4 38% 67%, #6c9b88 67%);
+  clip-path: polygon(50% 0, 100% 25%, 76% 100%, 13% 80%, 0 28%);
+}
+
+.poly-shard-two {
+  right: 31%;
+  bottom: 10%;
+  width: 110px;
+  height: 130px;
+  background: linear-gradient(35deg, var(--hot) 0 32%, #f4b06f 32% 62%, #cfe9dc 62%);
+  clip-path: polygon(0 16%, 72% 0, 100% 65%, 37% 100%);
+  animation-delay: -3s;
+}
+
+.poly-shard-three {
+  left: 33%;
+  top: 13%;
+  width: 52px;
+  height: 65px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 100% 70%, 18% 100%, 0 25%);
+  animation-delay: -6s;
+}
+
+.signal-active .poly-shard {
+  animation-duration: 4s;
+  opacity: .82;
+}
+
+@keyframes orbit-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+@keyframes shard-drift {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0);
+  }
+
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(5deg);
+  }
 }
 
 .section-grid {
@@ -365,7 +453,8 @@ h2 {
 .vault-visual {
   position: relative;
   overflow: hidden;
-  background: radial-gradient(circle at 65% 35%, #668e7c, #263d3a 55%);
+  background: linear-gradient(135deg, #8fb79e 0 20%, #44695f 20% 52%, #263d3a 52% 100%);
+  clip-path: polygon(0 4%, 18% 0, 48% 4%, 72% 0, 100% 7%, 100% 100%, 0 100%);
 }
 
 .vault-visual::after {
@@ -427,6 +516,7 @@ h2 {
   border: 1px dashed rgba(23, 43, 42, .25);
   color: var(--accent);
   font: 5rem var(--display);
+  clip-path: polygon(4% 0, 96% 5%, 100% 94%, 8% 100%, 0 22%);
 }
 
 .project-coming-soon .card-link {
@@ -462,6 +552,18 @@ footer {
   font-size: .72rem;
 }
 
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
 @media (max-width: 700px) {
 
   .site-header,
@@ -472,6 +574,10 @@ footer {
 
   nav {
     gap: .75rem;
+  }
+
+  .signal-toggle span {
+    display: none;
   }
 
   .nav-contact {

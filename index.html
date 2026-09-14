@@ -22,6 +22,8 @@
     <nav aria-label="Main navigation">
       <a href="#about">About</a>
       <a href="#projects">Projects</a>
+      <button class="signal-toggle" type="button" aria-pressed="false" aria-label="Activate ambient signal">◌
+        <span>Signal</span></button>
       <a class="nav-contact" href="mailto:gr82271@gmail.com">Say hello <span aria-hidden="true">↗</span></a>
     </nav>
   </header>
@@ -44,6 +46,9 @@
         <span class="note-mark" aria-hidden="true">✳</span>
       </div>
       <div class="hero-orbit" aria-hidden="true"><span></span></div>
+      <div class="poly-shard poly-shard-one" aria-hidden="true"></div>
+      <div class="poly-shard poly-shard-two" aria-hidden="true"></div>
+      <div class="poly-shard poly-shard-three" aria-hidden="true"></div>
     </section>
 
     <section class="about-section section-grid" id="about" aria-labelledby="about-title">
@@ -99,14 +104,23 @@
           href="mailto:gr82271@gmail.com">gr82271@gmail.com <span aria-hidden="true">↗</span></a>
       </div>
     </section>
-    </section>
-
   </main>
 
   <footer>
     <p>Built by hand by Grant Riemer.</p>
     <p>© 2026 · Keep learning, keep building.</p>
   </footer>
+
+  <script>
+    const signalToggle = document.querySelector('.signal-toggle');
+
+    signalToggle.addEventListener('click', () => {
+      const isActive = document.body.classList.toggle('signal-active');
+      signalToggle.setAttribute('aria-pressed', String(isActive));
+      signalToggle.setAttribute('aria-label', isActive ? 'Deactivate ambient signal' : 'Activate ambient signal');
+      signalToggle.querySelector('span').textContent = isActive ? 'Live' : 'Signal';
+    });
+  </script>
 
 </body>
 
