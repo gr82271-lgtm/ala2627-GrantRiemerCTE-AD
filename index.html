@@ -51,18 +51,31 @@
       <div class="poly-shard poly-shard-three" aria-hidden="true"></div>
     </section>
 
-    <section class="game-portal" aria-label="Playable mini game">
+    <section class="game-portal" aria-label="Playable Pong game">
       <div class="game-shell">
-        <div class="game-window glass-panel">
-          <div class="window-header"><span class="window-dot"></span><span class="window-dot"></span><span
-              class="window-dot"></span></div>
-          <p class="eyebrow">Mini challenge</p>
-          <h3 id="game-title">The Vault</h3>
-          <p id="game-message">The vault is sealed shut. Search the room for the hidden key.</p>
-          <p class="game-status"><strong>Inventory:</strong> <span id="inventory">Empty</span></p>
+        <div class="pong-panel glass-panel">
+          <div class="pong-header">
+            <div>
+              <p class="eyebrow">Mini arcade</p>
+              <h3 id="game-title">Pong</h3>
+            </div>
+            <div class="scoreboard" aria-live="polite">
+              <span id="score-left">0</span>
+              <span class="score-divider">:</span>
+              <span id="score-right">0</span>
+            </div>
+          </div>
+
+          <canvas id="pong-canvas" width="900" height="420" aria-label="Pong game area"></canvas>
+
+          <div class="pong-footer">
+            <span>W / S</span>
+            <span>↑ / ↓</span>
+            <button id="restart-pong" class="restart-button" type="button">Restart</button>
+          </div>
+
+          <p id="game-message" class="game-message">Press the arrow keys or W/S to start rallying the ball.</p>
         </div>
-        <button class="game-button game-button-left" type="button">Search</button>
-        <button class="game-button game-button-right" type="button">Open</button>
       </div>
     </section>
 
