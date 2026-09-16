@@ -51,6 +51,21 @@
       <div class="poly-shard poly-shard-three" aria-hidden="true"></div>
     </section>
 
+    <section class="game-portal" aria-label="Playable mini game">
+      <div class="game-shell">
+        <div class="game-window glass-panel">
+          <div class="window-header"><span class="window-dot"></span><span class="window-dot"></span><span
+              class="window-dot"></span></div>
+          <p class="eyebrow">Mini challenge</p>
+          <h3 id="game-title">The Vault</h3>
+          <p id="game-message">The vault is sealed shut. Search the room for the hidden key.</p>
+          <p class="game-status"><strong>Inventory:</strong> <span id="inventory">Empty</span></p>
+        </div>
+        <button class="game-button game-button-left" type="button">Search</button>
+        <button class="game-button game-button-right" type="button">Open</button>
+      </div>
+    </section>
+
     <section class="about-section section-grid" id="about" aria-labelledby="about-title">
       <div class="section-heading">
         <p class="eyebrow">01 / A little context</p>
@@ -121,6 +136,7 @@
       signalToggle.querySelector('span').textContent = isActive ? 'Live' : 'Signal';
     });
   </script>
+  <script src="Game.js"></script>
 
 </body>
 
