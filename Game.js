@@ -9,9 +9,9 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   const width = canvas.width;
   const height = canvas.height;
 
-  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430 };
-  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430 };
-  const ball = { x: width / 2, y: height / 2, radius: 10, vx: 340, vy: 180 };
+  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0 };
+  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0 };
+  const ball = { x: width / 2, y: height / 2, radius: 10, vx: 340, vy: 180, spin: 0 };
   const keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
 
   let leftScore = 0;
@@ -30,6 +30,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     const speed = 360;
     ball.vx = direction * speed;
     ball.vy = vertical;
+    ball.spin = 0;
   }
 
   function updateScore() {
@@ -41,20 +42,18 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     const leftDir = (keys.w ? -1 : 0) + (keys.s ? 1 : 0);
     const rightDir = (keys.ArrowUp ? -1 : 0) + (keys.ArrowDown ? 1 : 0);
 
-    leftPaddle.y += leftDir * leftPaddle.speed * dt;
-    rightPaddle.y += rightDir * rightPaddle.speed * dt;
+    const leftY = leftPaddle.y;
+    const rightY = rightPaddle.y;
 
-    if (!rightDir) {
-      const target = ball.y - rightPaddle.height / 2;
-      const diff = target - rightPaddle.y;
-      rightPaddle.y += Math.sign(diff) * rightPaddle.speed * 0.72 * dt;
-    }
-
-    leftPaddle.y = clamp(leftPaddle.y, 0, height - leftPaddle.height);
-    rightPaddle.y = clamp(rightPaddle.y, 0, height - rightPaddle.height);
+    leftPaddle.y = clamp(leftPaddle.y + leftDir * leftPaddle.speed * dt, 0, height - leftPaddle.height);
+    rightPaddle.y = clamp(rightPaddle.y + rightDir * rightPaddle.speed * dt, 0, height - rightPaddle.height);
+    leftPaddle.vy = (leftPaddle.y - leftY) / dt;
+    rightPaddle.vy = (rightPaddle.y - rightY) / dt;
   }
 
   function updateBall(dt) {
+    ball.vy += ball.spin * dt;
+    ball.spin *= Math.exp(-1.3 * dt);
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
 
@@ -73,6 +72,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       const impact = (ball.y - (leftPaddle.y + leftPaddle.height / 2)) / (leftPaddle.height / 2);
       ball.vx = Math.abs(ball.vx) + 18;
       ball.vy = impact * 260;
+      ball.spin = -leftPaddle.vy * 1.8;
     }
 
     if (
@@ -85,6 +85,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       const impact = (ball.y - (rightPaddle.y + rightPaddle.height / 2)) / (rightPaddle.height / 2);
       ball.vx = -Math.abs(ball.vx) - 18;
       ball.vy = impact * 260;
+      ball.spin = -rightPaddle.vy * 1.8;
     }
 
     if (ball.x + ball.radius < 0) {
@@ -146,22 +147,29 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     leftScore = 0;
     rightScore = 0;
     running = true;
-    gameMessage.textContent = 'Press the arrow keys or W/S to rally the ball.';
+    gameMessage.textContent = 'Left: W/S. Right: Up/Down. Moving paddles add reverse spin.';
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
     rightPaddle.y = height / 2 - rightPaddle.height / 2;
+    leftPaddle.vy = 0;
+    rightPaddle.vy = 0;
   }
 
   document.addEventListener('keydown', (event) => {
-    if (event.key in keys) {
-      keys[event.key] = true;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (key in keys) {
+      if (key.startsWith('Arrow')) {
+        event.preventDefault();
+      }
+      keys[key] = true;
     }
   });
 
   document.addEventListener('keyup', (event) => {
-    if (event.key in keys) {
-      keys[event.key] = false;
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (key in keys) {
+      keys[key] = false;
     }
   });
 
