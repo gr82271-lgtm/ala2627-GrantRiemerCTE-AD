@@ -51,6 +51,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     rightPaddle.vy = (rightPaddle.y - rightY) / dt;
   }
 
+  function applyPaddleSpin(paddle) {
+    const speedScale = Math.hypot(ball.vx, ball.vy) / 360;
+    ball.spin = -paddle.vy * 1.8 * speedScale;
+  }
+
   function updateBall(dt) {
     ball.vy += ball.spin * dt;
     ball.spin *= Math.exp(-1.3 * dt);
@@ -72,7 +77,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       const impact = (ball.y - (leftPaddle.y + leftPaddle.height / 2)) / (leftPaddle.height / 2);
       ball.vx = Math.abs(ball.vx) + 18;
       ball.vy = impact * 260;
-      ball.spin = -leftPaddle.vy * 1.8;
+      applyPaddleSpin(leftPaddle);
     }
 
     if (
@@ -85,7 +90,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       const impact = (ball.y - (rightPaddle.y + rightPaddle.height / 2)) / (rightPaddle.height / 2);
       ball.vx = -Math.abs(ball.vx) - 18;
       ball.vy = impact * 260;
-      ball.spin = -rightPaddle.vy * 1.8;
+      applyPaddleSpin(rightPaddle);
     }
 
     if (ball.x + ball.radius < 0) {
