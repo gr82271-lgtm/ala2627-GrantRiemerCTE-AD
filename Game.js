@@ -9,10 +9,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   const width = canvas.width;
   const height = canvas.height;
 
-  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0 };
-  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0 };
+  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
+  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
+  const hotColor = getComputedStyle(document.documentElement).getPropertyValue('--hot').trim();
   const ball = { x: width / 2, y: height / 2, radius: 10, vx: 340, vy: 180, spin: 0 };
-  const keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
+  const keys = { w: false, s: false, o: false, l: false };
 
   let leftScore = 0;
   let rightScore = 0;
@@ -40,7 +41,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   function updatePaddles(dt) {
     const leftDir = (keys.w ? -1 : 0) + (keys.s ? 1 : 0);
-    const rightDir = (keys.ArrowUp ? -1 : 0) + (keys.ArrowDown ? 1 : 0);
+    const rightDir = (keys.o ? -1 : 0) + (keys.l ? 1 : 0);
 
     const leftY = leftPaddle.y;
     const rightY = rightPaddle.y;
@@ -52,8 +53,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   }
 
   function applyPaddleSpin(paddle) {
-    const speedScale = Math.hypot(ball.vx, ball.vy) / 360;
-    ball.spin = -paddle.vy * 1.8 * speedScale;
+    ball.spin = -paddle.vy * 1.8;
   }
 
   function updateBall(dt) {
@@ -126,8 +126,9 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = leftPaddle.activated ? hotColor : '#f8fafc';
     ctx.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
+    ctx.fillStyle = rightPaddle.activated ? hotColor : '#f8fafc';
     ctx.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
 
     ctx.beginPath();
@@ -152,7 +153,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     leftScore = 0;
     rightScore = 0;
     running = true;
-    gameMessage.textContent = 'Left: W/S. Right: Up/Down. Moving paddles add reverse spin.';
+    gameMessage.textContent = 'Left: W/S move, D activate. Right: O/L move, K activate. Moving paddles add reverse spin.';
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
@@ -163,16 +164,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (key === 'd') leftPaddle.activated = true;
+    if (key === 'k') rightPaddle.activated = true;
     if (key in keys) {
-      if (key.startsWith('Arrow')) {
-        event.preventDefault();
-      }
       keys[key] = true;
     }
   });
 
   document.addEventListener('keyup', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (key === 'd') leftPaddle.activated = false;
+    if (key === 'k') rightPaddle.activated = false;
     if (key in keys) {
       keys[key] = false;
     }
