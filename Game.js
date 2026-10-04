@@ -12,8 +12,19 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
   const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
   const hotColor = getComputedStyle(document.documentElement).getPropertyValue('--hot').trim();
-  const ball = { x: width / 2, y: height / 2, radius: 10, vx: 340, vy: 180, spin: 0 };
+  const ball = {
+    x: width / 2,
+    y: height / 2,
+    radius: 10,
+    vx: 340,
+    vy: 180,
+    spin: 0,
+    stuckTo: null,
+    stickTimer: 0,
+    storedSpeed: 0
+  };
   const keys = { w: false, s: false, o: false, l: false };
+  const particles = [];
 
   let leftScore = 0;
   let rightScore = 0;
@@ -32,6 +43,24 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ball.vx = direction * speed;
     ball.vy = vertical;
     ball.spin = 0;
+    ball.stuckTo = null;
+    ball.stickTimer = 0;
+    ball.storedSpeed = 0;
+  }
+
+  function spawnParticles(x, y, color = '#f8fafc') {
+    for (let i = 0; i < 12; i += 1) {
+      particles.push({
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 180,
+        vy: (Math.random() - 0.5) * 160,
+        life: 0.4 + Math.random() * 0.35,
+        maxLife: 0.4 + Math.random() * 0.35,
+        size: 2 + Math.random() * 3,
+        color
+      });
+    }
   }
 
   function updateScore() {
@@ -56,7 +85,43 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ball.spin = -paddle.vy * 1.8;
   }
 
+  function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i -= 1) {
+      const particle = particles[i];
+      particle.life -= dt;
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vy += 90 * dt;
+
+      if (particle.life <= 0) {
+        particles.splice(i, 1);
+      }
+    }
+  }
+
   function updateBall(dt) {
+    if (ball.stuckTo) {
+      const paddle = ball.stuckTo;
+      ball.x = paddle === leftPaddle ? paddle.x + paddle.width + ball.radius : paddle.x - ball.radius;
+      ball.y = paddle.y + paddle.height / 2;
+      ball.vx = 0;
+      ball.vy = 0;
+      ball.stickTimer -= dt;
+
+      if (ball.stickTimer <= 0) {
+        const direction = paddle === leftPaddle ? 1 : -1;
+        const releaseSpeed = Math.max(ball.storedSpeed * 2, 360);
+        ball.vx = direction * releaseSpeed;
+        ball.vy = 0;
+        ball.spin = 0;
+        ball.stuckTo = null;
+        ball.stickTimer = 0;
+        ball.storedSpeed = 0;
+        spawnParticles(ball.x, ball.y);
+      }
+      return;
+    }
+
     ball.vy += ball.spin * dt;
     ball.spin *= Math.exp(-1.3 * dt);
     ball.x += ball.vx * dt;
@@ -73,6 +138,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ball.y <= leftPaddle.y + leftPaddle.height &&
       ball.x >= leftPaddle.x
     ) {
+      if (leftPaddle.activated) {
+        ball.stuckTo = leftPaddle;
+        ball.stickTimer = 1;
+        ball.storedSpeed = Math.hypot(ball.vx, ball.vy);
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.x = leftPaddle.x + leftPaddle.width + ball.radius;
+        ball.y = leftPaddle.y + leftPaddle.height / 2;
+        return;
+      }
+
       ball.x = leftPaddle.x + leftPaddle.width + ball.radius;
       const impact = (ball.y - (leftPaddle.y + leftPaddle.height / 2)) / (leftPaddle.height / 2);
       ball.vx = Math.abs(ball.vx) + 18;
@@ -86,6 +162,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ball.y <= rightPaddle.y + rightPaddle.height &&
       ball.x <= rightPaddle.x + rightPaddle.width
     ) {
+      if (rightPaddle.activated) {
+        ball.stuckTo = rightPaddle;
+        ball.stickTimer = 1;
+        ball.storedSpeed = Math.hypot(ball.vx, ball.vy);
+        ball.vx = 0;
+        ball.vy = 0;
+        ball.x = rightPaddle.x - ball.radius;
+        ball.y = rightPaddle.y + rightPaddle.height / 2;
+        return;
+      }
+
       ball.x = rightPaddle.x - ball.radius;
       const impact = (ball.y - (rightPaddle.y + rightPaddle.height / 2)) / (rightPaddle.height / 2);
       ball.vx = -Math.abs(ball.vx) - 18;
@@ -112,6 +199,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     }
   }
 
+  function drawParticles() {
+    for (const particle of particles) {
+      const alpha = Math.max(particle.life / particle.maxLife, 0);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = particle.color;
+      ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+      ctx.restore();
+    }
+  }
+
   function drawField() {
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#0f172a';
@@ -131,6 +229,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ctx.fillStyle = rightPaddle.activated ? hotColor : '#f8fafc';
     ctx.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
 
+    drawParticles();
+
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -145,6 +245,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       updateBall(dt);
     }
 
+    updateParticles(dt);
     drawField();
     requestAnimationFrame(loop);
   }
@@ -153,6 +254,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     leftScore = 0;
     rightScore = 0;
     running = true;
+    particles.length = 0;
     gameMessage.textContent = 'Left: W/S move, D activate. Right: O/L move, K activate. Moving paddles add reverse spin.';
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
