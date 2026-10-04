@@ -68,13 +68,36 @@
 
           <canvas id="pong-canvas" width="900" height="420" aria-label="Pong game area"></canvas>
 
+          <div id="powerup-marketplace" class="powerup-marketplace hidden" aria-live="polite">
+            <div class="market-panel" role="dialog" aria-modal="true" aria-label="Choose a power-up">
+              <div class="market-side">
+                <p class="market-label">Left side</p>
+                <div class="powerup-list">
+                  <button type="button" class="powerup-option" data-side="left" data-option="1">Power Up 1</button>
+                  <button type="button" class="powerup-option" data-side="left" data-option="2">Power Up 2</button>
+                  <button type="button" class="powerup-option" data-side="left" data-option="3">Power Up 3</button>
+                </div>
+              </div>
+              <div class="market-divider" aria-hidden="true"></div>
+              <div class="market-side right-side">
+                <p class="market-label">Right side</p>
+                <div class="powerup-list">
+                  <button type="button" class="powerup-option" data-side="right" data-option="1">Power Up 1</button>
+                  <button type="button" class="powerup-option" data-side="right" data-option="2">Power Up 2</button>
+                  <button type="button" class="powerup-option" data-side="right" data-option="3">Power Up 3</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="pong-footer">
             <span>W / S · D</span>
             <span>O / L · K</span>
             <button id="restart-pong" class="restart-button" type="button">Restart</button>
           </div>
 
-          <p id="game-message" class="game-message">Left: W/S move, D activate. Right: O/L move, K activate. Moving paddles add reverse spin.</p>
+          <p id="game-message" class="game-message">Left: W/S move, D activate. Right: O/L move, K activate. Moving
+            paddles add reverse spin.</p>
         </div>
       </div>
     </section>

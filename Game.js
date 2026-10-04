@@ -25,9 +25,16 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   };
   const keys = { w: false, s: false, o: false, l: false };
   const particles = [];
+  const marketplace = document.getElementById('powerup-marketplace');
+  const powerupButtons = document.querySelectorAll('.powerup-option');
 
   let leftScore = 0;
   let rightScore = 0;
+  let leftMatchWins = 0;
+  let rightMatchWins = 0;
+  let roundNumber = 1;
+  let leftPowerChoice = null;
+  let rightPowerChoice = null;
   let running = true;
   let lastTime = 0;
 
@@ -48,7 +55,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ball.storedSpeed = 0;
   }
 
-  function spawnParticles(x, y, color = '#f8fafc') {
+  function spawnParticles(x, y, color = hotColor) {
     for (let i = 0; i < 12; i += 1) {
       particles.push({
         x,
@@ -66,6 +73,85 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   function updateScore() {
     scoreLeft.textContent = String(leftScore);
     scoreRight.textContent = String(rightScore);
+  }
+
+  function hideMarketplace() {
+    if (marketplace) {
+      marketplace.classList.add('hidden');
+    }
+  }
+
+  function showMarketplace() {
+    if (!marketplace) return;
+    leftPowerChoice = null;
+    rightPowerChoice = null;
+    powerupButtons.forEach((button) => {
+      button.classList.remove('selected');
+      button.disabled = false;
+    });
+    marketplace.classList.remove('hidden');
+    running = false;
+    gameMessage.textContent = 'Round complete. Choose a power-up for each side.';
+  }
+
+  function startNextRound() {
+    hideMarketplace();
+    roundNumber += 1;
+    leftScore = 0;
+    rightScore = 0;
+    running = true;
+    gameMessage.textContent = `Round ${roundNumber - 1} complete. Next round is live.`;
+    updateScore();
+    resetBall(Math.random() > 0.5 ? 1 : -1);
+    leftPaddle.y = height / 2 - leftPaddle.height / 2;
+    rightPaddle.y = height / 2 - rightPaddle.height / 2;
+    leftPaddle.vy = 0;
+    rightPaddle.vy = 0;
+    leftPaddle.activated = false;
+    rightPaddle.activated = false;
+  }
+
+  function closePowerupMarket() {
+    hideMarketplace();
+    if (leftMatchWins >= 2 || rightMatchWins >= 2) {
+      gameMessage.textContent = leftMatchWins > rightMatchWins ? 'Left side wins the best-of-three! Press Restart to play again.' : 'Right side wins the best-of-three! Press Restart to play again.';
+      running = false;
+      return;
+    }
+    running = true;
+    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Choose your next move.`;
+    leftScore = 0;
+    rightScore = 0;
+    updateScore();
+    resetBall(Math.random() > 0.5 ? 1 : -1);
+    leftPaddle.y = height / 2 - leftPaddle.height / 2;
+    rightPaddle.y = height / 2 - rightPaddle.height / 2;
+    leftPaddle.vy = 0;
+    rightPaddle.vy = 0;
+    leftPaddle.activated = false;
+    rightPaddle.activated = false;
+  }
+
+  function handlePowerUpChoice(event) {
+    const button = event.currentTarget;
+    const side = button.dataset.side;
+    const value = button.dataset.option;
+    const selectedButtons = document.querySelectorAll(`.powerup-option[data-side="${side}"]`);
+
+    selectedButtons.forEach((item) => item.classList.remove('selected'));
+    button.classList.add('selected');
+
+    if (side === 'left') {
+      leftPowerChoice = value;
+    } else {
+      rightPowerChoice = value;
+    }
+
+    if (leftPowerChoice && rightPowerChoice) {
+      setTimeout(() => {
+        closePowerupMarket();
+      }, 180);
+    }
   }
 
   function updatePaddles(dt) {
@@ -99,6 +185,21 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     }
   }
 
+  function releaseStuckBall(paddle) {
+    const currentSpeed = Math.max(ball.storedSpeed || Math.hypot(ball.vx, ball.vy), 1);
+    const direction = paddle === leftPaddle ? 1 : -1;
+    const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
+    const releaseSpeed = currentSpeed * 2;
+
+    ball.vx = direction * releaseSpeed;
+    ball.vy = impact * releaseSpeed * 0.7;
+    ball.spin = 0;
+    ball.stuckTo = null;
+    ball.stickTimer = 0;
+    ball.storedSpeed = 0;
+    spawnParticles(ball.x, ball.y, hotColor);
+  }
+
   function updateBall(dt) {
     if (ball.stuckTo) {
       const paddle = ball.stuckTo;
@@ -109,15 +210,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ball.stickTimer -= dt;
 
       if (ball.stickTimer <= 0) {
-        const direction = paddle === leftPaddle ? 1 : -1;
-        const releaseSpeed = Math.max(ball.storedSpeed * 2, 360);
-        ball.vx = direction * releaseSpeed;
-        ball.vy = 0;
-        ball.spin = 0;
-        ball.stuckTo = null;
-        ball.stickTimer = 0;
-        ball.storedSpeed = 0;
-        spawnParticles(ball.x, ball.y);
+        releaseStuckBall(paddle);
       }
       return;
     }
@@ -193,9 +286,22 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     }
 
     if (leftScore >= 7 || rightScore >= 7) {
+      const roundWinner = leftScore > rightScore ? 'left' : 'right';
+      if (roundWinner === 'left') {
+        leftMatchWins += 1;
+      } else {
+        rightMatchWins += 1;
+      }
+
       running = false;
-      const winner = leftScore > rightScore ? 'Left player wins!' : 'Right player wins!';
-      gameMessage.textContent = `${winner} Press Restart to play again.`;
+      gameMessage.textContent = `${roundWinner === 'left' ? 'Left' : 'Right'} side wins the round.`;
+
+      if (leftMatchWins >= 2 || rightMatchWins >= 2) {
+        const matchWinner = leftMatchWins > rightMatchWins ? 'Left side wins the best-of-three!' : 'Right side wins the best-of-three!';
+        gameMessage.textContent = `${matchWinner} Press Restart to play again.`;
+      } else {
+        showMarketplace();
+      }
     }
   }
 
@@ -253,9 +359,15 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   function resetGame() {
     leftScore = 0;
     rightScore = 0;
+    leftMatchWins = 0;
+    rightMatchWins = 0;
+    roundNumber = 1;
+    leftPowerChoice = null;
+    rightPowerChoice = null;
     running = true;
     particles.length = 0;
-    gameMessage.textContent = 'Left: W/S move, D activate. Right: O/L move, K activate. Moving paddles add reverse spin.';
+    hideMarketplace();
+    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Left: W/S move, D activate. Right: O/L move, K activate.`;
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
@@ -263,6 +375,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     leftPaddle.vy = 0;
     rightPaddle.vy = 0;
   }
+
+  powerupButtons.forEach((button) => {
+    button.addEventListener('click', handlePowerUpChoice);
+  });
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
