@@ -93,6 +93,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     rightPowerChoice = null;
     powerupButtons.forEach((button) => {
       button.classList.remove('selected');
+      button.removeAttribute('open');
       button.disabled = false;
     });
     marketplace.classList.remove('hidden');
@@ -148,7 +149,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     const value = button.dataset.option;
     const selectedButtons = document.querySelectorAll(`.powerup-option[data-side="${side}"]`);
 
-    selectedButtons.forEach((item) => item.classList.remove('selected'));
+    selectedButtons.forEach((item) => {
+      item.classList.remove('selected');
+      if (item !== button) {
+        item.removeAttribute('open');
+      }
+    });
     button.classList.add('selected');
 
     if (side === 'left') {
