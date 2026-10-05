@@ -9,6 +9,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   const width = canvas.width;
   const height = canvas.height;
   const activationHits = 3;
+  const powerShotHits = 5;
 
   const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
   const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
@@ -22,10 +23,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     spin: 0,
     stuckTo: null,
     stickTimer: 0,
-    storedSpeed: 0
+    storedSpeed: 0,
+    decoyMode: false
   };
   const keys = { w: false, s: false, o: false, l: false };
   const particles = [];
+  const decoyBalls = [];
   const marketplace = document.getElementById('powerup-marketplace');
   const powerupButtons = document.querySelectorAll('.powerup-option');
 
@@ -54,6 +57,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ball.stuckTo = null;
     ball.stickTimer = 0;
     ball.storedSpeed = 0;
+    ball.decoyMode = false;
+    decoyBalls.length = 0;
   }
 
   function spawnParticles(x, y, color = hotColor) {
@@ -122,7 +127,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       return;
     }
     running = true;
-    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Choose your next move.`;
+    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Left activation: ${hitsToCharge(leftPaddle)} hits; right activation: ${hitsToCharge(rightPaddle)} hits.`;
     leftScore = 0;
     rightScore = 0;
     updateScore();
@@ -176,8 +181,13 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ball.spin = -paddle.vy * 1.8;
   }
 
+  function hitsToCharge(paddle) {
+    const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
+    return powerChoice === 'power-shot' ? powerShotHits : activationHits;
+  }
+
   function chargePaddle(paddle) {
-    paddle.charge = Math.min(paddle.charge + 1, activationHits);
+    paddle.charge = Math.min(paddle.charge + 1, hitsToCharge(paddle));
   }
 
   function updateParticles(dt) {
@@ -194,14 +204,59 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     }
   }
 
+  function updateDecoyBalls(dt) {
+    for (let index = decoyBalls.length - 1; index >= 0; index -= 1) {
+      const decoy = decoyBalls[index];
+      decoy.x += decoy.vx * dt;
+      decoy.y += decoy.vy * dt;
+
+      if (decoy.y - decoy.radius <= 0 || decoy.y + decoy.radius >= height) {
+        decoy.vy *= -1;
+        decoy.y = clamp(decoy.y, decoy.radius, height - decoy.radius);
+      }
+
+      if (decoy.x + decoy.radius < 0 || decoy.x - decoy.radius > width) {
+        decoyBalls.splice(index, 1);
+      }
+    }
+  }
+
   function releaseStuckBall(paddle) {
     const currentSpeed = Math.max(ball.storedSpeed || Math.hypot(ball.vx, ball.vy), 1);
     const direction = paddle === leftPaddle ? 1 : -1;
     const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
-    const releaseSpeed = currentSpeed * 2;
+    const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
+    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : 2;
+    const releaseSpeed = currentSpeed * releaseMultiplier;
+    const launchAngle = Math.atan(impact * 0.7);
 
-    ball.vx = direction * releaseSpeed;
-    ball.vy = impact * releaseSpeed * 0.7;
+    decoyBalls.length = 0;
+    ball.decoyMode = powerChoice === 'decoy';
+    if (ball.decoyMode) {
+      const launchAngles = [-0.45, 0, 0.45].map((offset) => launchAngle + offset);
+      for (let index = launchAngles.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [launchAngles[index], launchAngles[swapIndex]] = [launchAngles[swapIndex], launchAngles[index]];
+      }
+      const redBallIndex = Math.floor(Math.random() * launchAngles.length);
+
+      launchAngles.forEach((angle, index) => {
+        const vx = direction * releaseSpeed * Math.cos(angle);
+        const vy = releaseSpeed * Math.sin(angle);
+        if (index === redBallIndex) {
+          ball.vx = vx;
+          ball.vy = vy;
+        } else {
+          decoyBalls.push({ x: ball.x, y: ball.y, radius: ball.radius, vx, vy });
+        }
+      });
+    } else if (powerChoice === 'power-shot') {
+      ball.vx = direction * releaseSpeed * Math.cos(launchAngle);
+      ball.vy = releaseSpeed * Math.sin(launchAngle);
+    } else {
+      ball.vx = direction * releaseSpeed;
+      ball.vy = impact * releaseSpeed * 0.7;
+    }
     ball.spin = 0;
     ball.stuckTo = null;
     ball.stickTimer = 0;
@@ -347,14 +402,22 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
       ctx.fillRect(paddle.x + 5, paddle.y + 3, 4, paddle.height - 6);
       ctx.fillStyle = hotColor;
-      const chargeHeight = (paddle.height - 6) * (paddle.charge / activationHits);
+      const chargeHeight = (paddle.height - 6) * (paddle.charge / hitsToCharge(paddle));
       ctx.fillRect(paddle.x + 5, paddle.y + paddle.height - 3 - chargeHeight, 4, chargeHeight);
     });
 
     drawParticles();
 
+    ctx.fillStyle = '#f8fafc';
+    decoyBalls.forEach((decoy) => {
+      ctx.beginPath();
+      ctx.arc(decoy.x, decoy.y, decoy.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = ball.decoyMode ? '#ef4444' : '#f8fafc';
     ctx.fill();
   }
 
@@ -365,6 +428,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     if (running) {
       updatePaddles(dt);
       updateBall(dt);
+      updateDecoyBalls(dt);
     }
 
     updateParticles(dt);
@@ -383,7 +447,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     running = true;
     particles.length = 0;
     hideMarketplace();
-    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Hit ${activationHits} times to charge activation. Left: W/S move, D activate. Right: O/L move, K activate.`;
+    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Hit ${activationHits} times to charge activation (Power Shot: ${powerShotHits}). Left: W/S move, D activate. Right: O/L move, K activate.`;
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
@@ -402,11 +466,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-    if (key === 'd' && leftPaddle.charge === activationHits) {
+    if (key === 'd' && leftPaddle.charge === hitsToCharge(leftPaddle)) {
       leftPaddle.activated = true;
       leftPaddle.charge = 0;
     }
-    if (key === 'k' && rightPaddle.charge === activationHits) {
+    if (key === 'k' && rightPaddle.charge === hitsToCharge(rightPaddle)) {
       rightPaddle.activated = true;
       rightPaddle.charge = 0;
     }
