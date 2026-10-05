@@ -66,6 +66,24 @@
             </div>
           </div>
 
+          <div class="hack-bar-row" aria-label="Hack charge meters">
+            <div class="hack-bar" aria-hidden="true">
+              <div id="hack-bar-fill-left" class="hack-bar-fill"></div>
+            </div>
+            <div class="hack-bar" aria-hidden="true">
+              <div id="hack-bar-fill-right" class="hack-bar-fill"></div>
+            </div>
+          </div>
+
+          <div class="hack-bar-row" aria-label="Hack charge meters">
+            <div class="hack-bar" aria-hidden="true">
+              <div id="hack-bar-fill-left" class="hack-bar-fill"></div>
+            </div>
+            <div class="hack-bar" aria-hidden="true">
+              <div id="hack-bar-fill-right" class="hack-bar-fill"></div>
+            </div>
+          </div>
+
           <canvas id="pong-canvas" width="900" height="420" aria-label="Pong game area"></canvas>
 
           <div id="powerup-marketplace" class="powerup-marketplace hidden" aria-live="polite">
@@ -87,6 +105,16 @@
                     <div class="powerup-description">50% faster launch. Adds a random 30-degree reverse curve to the
                       ball.</div>
                   </details>
+                  <details class="powerup-option" data-side="left" data-option="drone">
+                    <summary>Drone</summary>
+                    <div class="powerup-description">10% slower paddle speed. You can steer the ball up and down with
+                      your paddle controls while it is held.</div>
+                  </details>
+                  <details class="powerup-option" data-side="left" data-option="hack">
+                    <summary>Hack</summary>
+                    <div class="powerup-description">When activated, the ball does not stick to your paddle. A bar fills
+                      for 5 seconds, then the other screen is distorted.</div>
+                  </details>
                 </div>
               </div>
               <div class="market-divider" aria-hidden="true"></div>
@@ -106,6 +134,16 @@
                     <summary>Curve Shot</summary>
                     <div class="powerup-description">50% faster launch. Adds a random 30-degree reverse curve to the
                       ball.</div>
+                  </details>
+                  <details class="powerup-option" data-side="right" data-option="drone">
+                    <summary>Drone</summary>
+                    <div class="powerup-description">10% slower paddle speed. You can steer the ball up and down with
+                      your paddle controls while it is held.</div>
+                  </details>
+                  <details class="powerup-option" data-side="right" data-option="hack">
+                    <summary>Hack</summary>
+                    <div class="powerup-description">When activated, the ball does not stick to your paddle. A bar fills
+                      for 5 seconds, then the other screen is distorted.</div>
                   </details>
                 </div>
               </div>

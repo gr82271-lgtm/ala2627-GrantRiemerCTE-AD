@@ -3,6 +3,8 @@ const scoreLeft = document.getElementById('score-left');
 const scoreRight = document.getElementById('score-right');
 const gameMessage = document.getElementById('game-message');
 const abortButton = document.getElementById('abort-game');
+const leftHackFill = document.getElementById('hack-bar-fill-left');
+const rightHackFill = document.getElementById('hack-bar-fill-right');
 
 if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   const ctx = canvas.getContext('2d');
@@ -11,9 +13,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   const activationHits = 3;
   const powerShotHits = 5;
   const roundGoal = 3;
+  const hackDuration = 5;
 
-  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
-  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
+  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, baseSpeed: 430, speed: 430, vy: 0, activated: false, charge: 0, hackMeter: 0, distortionTimer: 0 };
+  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, baseSpeed: 430, speed: 430, vy: 0, activated: false, charge: 0, hackMeter: 0, distortionTimer: 0 };
   const hotColor = getComputedStyle(document.documentElement).getPropertyValue('--hot').trim();
   const ball = {
     x: width / 2,
@@ -40,6 +43,39 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   let rightPowerChoice = null;
   let running = true;
   let lastTime = 0;
+
+  function getPowerChoiceForPaddle(paddle) {
+    return paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
+  }
+
+  function getOpponentPaddle(paddle) {
+    return paddle === leftPaddle ? rightPaddle : leftPaddle;
+  }
+
+  function updateHackBar(paddle) {
+    const fillElement = paddle === leftPaddle ? leftHackFill : rightHackFill;
+    if (!fillElement) return;
+    const percent = Math.max(0, Math.min(100, (paddle.hackMeter / hackDuration) * 100));
+    fillElement.style.width = `${percent}%`;
+    const isActive = getPowerChoiceForPaddle(paddle) === 'hack' && paddle.activated;
+    fillElement.parentElement.style.opacity = isActive ? '1' : '0';
+  }
+
+  function triggerScreenDistortion(paddle) {
+    const opponent = getOpponentPaddle(paddle);
+    opponent.distortionTimer = 2.5;
+    gameMessage.textContent = `${paddle === leftPaddle ? 'Left' : 'Right'} side triggered a Hack! The other screen is distorted.`;
+  }
+
+  function activatePaddle(paddle) {
+    const powerChoice = getPowerChoiceForPaddle(paddle);
+    paddle.activated = true;
+    paddle.charge = 0;
+    if (powerChoice === 'hack') {
+      paddle.hackMeter = 0;
+      updateHackBar(paddle);
+    }
+  }
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -123,6 +159,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     hideMarketplace();
     roundNumber += 1;
     running = true;
+    leftPaddle.hackMeter = 0;
+    rightPaddle.hackMeter = 0;
+    leftPaddle.distortionTimer = 0;
+    rightPaddle.distortionTimer = 0;
+    canvas.style.filter = '';
     gameMessage.textContent = `Round ${roundNumber} — First to ${roundGoal} points. Left activation: ${hitsToCharge(leftPaddle)} hits; right activation: ${hitsToCharge(rightPaddle)} hits.`;
     leftScore = 0;
     rightScore = 0;
@@ -136,6 +177,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     rightPaddle.activated = false;
     leftPaddle.charge = 0;
     rightPaddle.charge = 0;
+    updateHackBar(leftPaddle);
+    updateHackBar(rightPaddle);
   }
 
   function handlePowerUpChoice(event) {
@@ -172,6 +215,9 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const leftY = leftPaddle.y;
     const rightY = rightPaddle.y;
 
+    leftPaddle.speed = getPowerChoiceForPaddle(leftPaddle) === 'drone' && leftPaddle.activated ? leftPaddle.baseSpeed * 0.9 : leftPaddle.baseSpeed;
+    rightPaddle.speed = getPowerChoiceForPaddle(rightPaddle) === 'drone' && rightPaddle.activated ? rightPaddle.baseSpeed * 0.9 : rightPaddle.baseSpeed;
+
     leftPaddle.y = clamp(leftPaddle.y + leftDir * leftPaddle.speed * dt, 0, height - leftPaddle.height);
     rightPaddle.y = clamp(rightPaddle.y + rightDir * rightPaddle.speed * dt, 0, height - rightPaddle.height);
     leftPaddle.vy = (leftPaddle.y - leftY) / dt;
@@ -183,12 +229,46 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   }
 
   function hitsToCharge(paddle) {
-    const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
+    const powerChoice = getPowerChoiceForPaddle(paddle);
     return powerChoice === 'power-shot' ? powerShotHits : activationHits;
   }
 
   function chargePaddle(paddle) {
     paddle.charge = Math.min(paddle.charge + 1, hitsToCharge(paddle));
+  }
+
+  function updateHackMeter(dt) {
+    [leftPaddle, rightPaddle].forEach((paddle) => {
+      const powerChoice = getPowerChoiceForPaddle(paddle);
+      if (powerChoice !== 'hack' || !paddle.activated) {
+        paddle.hackMeter = 0;
+        updateHackBar(paddle);
+        return;
+      }
+
+      paddle.hackMeter = Math.min(paddle.hackMeter + dt, hackDuration);
+      updateHackBar(paddle);
+
+      if (paddle.hackMeter >= hackDuration) {
+        triggerScreenDistortion(paddle);
+        paddle.activated = false;
+        paddle.hackMeter = 0;
+        updateHackBar(paddle);
+      }
+    });
+
+    if (leftPaddle.distortionTimer > 0) {
+      leftPaddle.distortionTimer = Math.max(0, leftPaddle.distortionTimer - dt);
+    }
+    if (rightPaddle.distortionTimer > 0) {
+      rightPaddle.distortionTimer = Math.max(0, rightPaddle.distortionTimer - dt);
+    }
+
+    if (leftPaddle.distortionTimer > 0 || rightPaddle.distortionTimer > 0) {
+      canvas.style.filter = 'saturate(1.5) contrast(1.2) hue-rotate(18deg) blur(0.7px)';
+    } else {
+      canvas.style.filter = '';
+    }
   }
 
   function updateParticles(dt) {
@@ -226,8 +306,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const currentSpeed = Math.max(ball.storedSpeed || Math.hypot(ball.vx, ball.vy), 1);
     const direction = paddle === leftPaddle ? 1 : -1;
     const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
-    const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
-    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 1.5 : 2;
+    const powerChoice = getPowerChoiceForPaddle(paddle);
+    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 1.5 : powerChoice === 'drone' ? 1.2 : 2;
     const releaseSpeed = currentSpeed * releaseMultiplier;
     const launchAngle = Math.atan(impact * 0.7);
     let releaseSpin = 0;
@@ -275,10 +355,15 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   function updateBall(dt) {
     if (ball.stuckTo) {
       const paddle = ball.stuckTo;
+      const controlDirection = paddle === leftPaddle ? ((keys.w ? -1 : 0) + (keys.s ? 1 : 0)) : ((keys.o ? -1 : 0) + (keys.l ? 1 : 0));
       ball.x = paddle === leftPaddle ? paddle.x + paddle.width + ball.radius : paddle.x - ball.radius;
       ball.y = paddle.y + paddle.height / 2;
       ball.vx = 0;
       ball.vy = 0;
+      if (getPowerChoiceForPaddle(paddle) === 'drone') {
+        ball.y = clamp(ball.y + controlDirection * 220 * dt, ball.radius, height - ball.radius);
+        ball.vy = controlDirection * 260;
+      }
       ball.stickTimer -= dt;
 
       if (ball.stickTimer <= 0) {
@@ -303,6 +388,19 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       ball.y <= leftPaddle.y + leftPaddle.height &&
       ball.x >= leftPaddle.x
     ) {
+      if (leftPaddle.activated && getPowerChoiceForPaddle(leftPaddle) === 'hack') {
+        ball.x = leftPaddle.x + leftPaddle.width + ball.radius;
+        const impact = (ball.y - (leftPaddle.y + leftPaddle.height / 2)) / (leftPaddle.height / 2);
+        ball.vx = Math.abs(ball.vx) + 18;
+        ball.vy = impact * 260;
+        leftPaddle.activated = false;
+        leftPaddle.hackMeter = 0;
+        updateHackBar(leftPaddle);
+        applyPaddleSpin(leftPaddle);
+        chargePaddle(leftPaddle);
+        return;
+      }
+
       if (leftPaddle.activated) {
         ball.stuckTo = leftPaddle;
         ball.stickTimer = 1;
@@ -328,6 +426,19 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       ball.y <= rightPaddle.y + rightPaddle.height &&
       ball.x <= rightPaddle.x + rightPaddle.width
     ) {
+      if (rightPaddle.activated && getPowerChoiceForPaddle(rightPaddle) === 'hack') {
+        ball.x = rightPaddle.x - ball.radius;
+        const impact = (ball.y - (rightPaddle.y + rightPaddle.height / 2)) / (rightPaddle.height / 2);
+        ball.vx = -Math.abs(ball.vx) - 18;
+        ball.vy = impact * 260;
+        rightPaddle.activated = false;
+        rightPaddle.hackMeter = 0;
+        updateHackBar(rightPaddle);
+        applyPaddleSpin(rightPaddle);
+        chargePaddle(rightPaddle);
+        return;
+      }
+
       if (rightPaddle.activated) {
         ball.stuckTo = rightPaddle;
         ball.stickTimer = 1;
@@ -423,6 +534,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
     if (running) {
       updatePaddles(dt);
+      updateHackMeter(dt);
       updateBall(dt);
       updateDecoyBalls(dt);
     }
@@ -440,6 +552,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     rightPowerChoice = null;
     running = true;
     particles.length = 0;
+    leftPaddle.hackMeter = 0;
+    rightPaddle.hackMeter = 0;
+    leftPaddle.distortionTimer = 0;
+    rightPaddle.distortionTimer = 0;
+    canvas.style.filter = '';
     hideMarketplace();
     gameMessage.textContent = `Round ${roundNumber} — First to ${roundGoal} points. Hit ${activationHits} times to charge activation (Power Shot: ${powerShotHits}). Left: W/S move, D activate. Right: O/L move, K activate.`;
     updateScore();
@@ -452,6 +569,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     rightPaddle.activated = false;
     leftPaddle.charge = 0;
     rightPaddle.charge = 0;
+    updateHackBar(leftPaddle);
+    updateHackBar(rightPaddle);
   }
 
   powerupButtons.forEach((button) => {
@@ -461,12 +580,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
     if (key === 'd' && leftPaddle.charge === hitsToCharge(leftPaddle)) {
-      leftPaddle.activated = true;
-      leftPaddle.charge = 0;
+      activatePaddle(leftPaddle);
     }
     if (key === 'k' && rightPaddle.charge === hitsToCharge(rightPaddle)) {
-      rightPaddle.activated = true;
-      rightPaddle.charge = 0;
+      activatePaddle(rightPaddle);
     }
     if (key in keys) {
       keys[key] = true;
@@ -475,8 +592,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
   document.addEventListener('keyup', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-    if (key === 'd') leftPaddle.activated = false;
-    if (key === 'k') rightPaddle.activated = false;
+    if (key === 'd' && getPowerChoiceForPaddle(leftPaddle) !== 'hack') leftPaddle.activated = false;
+    if (key === 'k' && getPowerChoiceForPaddle(rightPaddle) !== 'hack') rightPaddle.activated = false;
     if (key in keys) {
       keys[key] = false;
     }

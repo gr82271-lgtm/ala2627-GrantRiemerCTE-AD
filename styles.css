@@ -486,6 +486,34 @@ h2 em {
   opacity: .7;
 }
 
+.hack-bar-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+  margin: 0 0 .8rem;
+}
+
+.hack-bar {
+  position: relative;
+  height: 10px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.hack-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #fbbf24, #ef4444, #7c3aed);
+  box-shadow: 0 0 14px rgba(239, 68, 68, .6);
+  transition: width .12s linear;
+}
+
 #pong-canvas {
   display: block;
   width: 100%;
@@ -495,6 +523,7 @@ h2 em {
   border: 1px solid rgba(23, 43, 42, .15);
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(23, 43, 42, .96), rgba(28, 52, 44, .9));
+  transition: filter .2s ease;
 }
 
 .pong-footer {
