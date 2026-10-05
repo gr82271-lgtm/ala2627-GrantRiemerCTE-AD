@@ -8,9 +8,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
+  const activationHits = 3;
 
-  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
-  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false };
+  const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
+  const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
   const hotColor = getComputedStyle(document.documentElement).getPropertyValue('--hot').trim();
   const ball = {
     x: width / 2,
@@ -109,6 +110,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     rightPaddle.vy = 0;
     leftPaddle.activated = false;
     rightPaddle.activated = false;
+    leftPaddle.charge = 0;
+    rightPaddle.charge = 0;
   }
 
   function closePowerupMarket() {
@@ -130,6 +133,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     rightPaddle.vy = 0;
     leftPaddle.activated = false;
     rightPaddle.activated = false;
+    leftPaddle.charge = 0;
+    rightPaddle.charge = 0;
   }
 
   function handlePowerUpChoice(event) {
@@ -169,6 +174,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   function applyPaddleSpin(paddle) {
     ball.spin = -paddle.vy * 1.8;
+  }
+
+  function chargePaddle(paddle) {
+    paddle.charge = Math.min(paddle.charge + 1, activationHits);
   }
 
   function updateParticles(dt) {
@@ -247,6 +256,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ball.vx = Math.abs(ball.vx) + 18;
       ball.vy = impact * 260;
       applyPaddleSpin(leftPaddle);
+      chargePaddle(leftPaddle);
     }
 
     if (
@@ -271,6 +281,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       ball.vx = -Math.abs(ball.vx) - 18;
       ball.vy = impact * 260;
       applyPaddleSpin(rightPaddle);
+      chargePaddle(rightPaddle);
     }
 
     if (ball.x + ball.radius < 0) {
@@ -330,10 +341,15 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.fillStyle = leftPaddle.activated ? hotColor : '#f8fafc';
-    ctx.fillRect(leftPaddle.x, leftPaddle.y, leftPaddle.width, leftPaddle.height);
-    ctx.fillStyle = rightPaddle.activated ? hotColor : '#f8fafc';
-    ctx.fillRect(rightPaddle.x, rightPaddle.y, rightPaddle.width, rightPaddle.height);
+    [leftPaddle, rightPaddle].forEach((paddle) => {
+      ctx.fillStyle = paddle.activated ? hotColor : '#f8fafc';
+      ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+      ctx.fillRect(paddle.x + 5, paddle.y + 3, 4, paddle.height - 6);
+      ctx.fillStyle = hotColor;
+      const chargeHeight = (paddle.height - 6) * (paddle.charge / activationHits);
+      ctx.fillRect(paddle.x + 5, paddle.y + paddle.height - 3 - chargeHeight, 4, chargeHeight);
+    });
 
     drawParticles();
 
@@ -367,13 +383,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     running = true;
     particles.length = 0;
     hideMarketplace();
-    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Left: W/S move, D activate. Right: O/L move, K activate.`;
+    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Hit ${activationHits} times to charge activation. Left: W/S move, D activate. Right: O/L move, K activate.`;
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
     rightPaddle.y = height / 2 - rightPaddle.height / 2;
     leftPaddle.vy = 0;
     rightPaddle.vy = 0;
+    leftPaddle.activated = false;
+    rightPaddle.activated = false;
+    leftPaddle.charge = 0;
+    rightPaddle.charge = 0;
   }
 
   powerupButtons.forEach((button) => {
@@ -382,8 +402,14 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-    if (key === 'd') leftPaddle.activated = true;
-    if (key === 'k') rightPaddle.activated = true;
+    if (key === 'd' && leftPaddle.charge === activationHits) {
+      leftPaddle.activated = true;
+      leftPaddle.charge = 0;
+    }
+    if (key === 'k' && rightPaddle.charge === activationHits) {
+      rightPaddle.activated = true;
+      rightPaddle.charge = 0;
+    }
     if (key in keys) {
       keys[key] = true;
     }
