@@ -226,9 +226,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     const direction = paddle === leftPaddle ? 1 : -1;
     const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
     const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
-    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : 2;
+    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 0.8 : 2;
     const releaseSpeed = currentSpeed * releaseMultiplier;
     const launchAngle = Math.atan(impact * 0.7);
+    let releaseSpin = 0;
 
     decoyBalls.length = 0;
     ball.decoyMode = powerChoice === 'decoy';
@@ -253,11 +254,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     } else if (powerChoice === 'power-shot') {
       ball.vx = direction * releaseSpeed * Math.cos(launchAngle);
       ball.vy = releaseSpeed * Math.sin(launchAngle);
+    } else if (powerChoice === 'curve-shot') {
+      const curveDirection = Math.random() < 0.5 ? -1 : 1;
+      const curveAngle = Math.PI / 6;
+      ball.vx = direction * releaseSpeed * Math.cos(curveAngle);
+      ball.vy = curveDirection * releaseSpeed * Math.sin(curveAngle);
+      releaseSpin = -curveDirection * releaseSpeed * 2.5;
     } else {
       ball.vx = direction * releaseSpeed;
       ball.vy = impact * releaseSpeed * 0.7;
     }
-    ball.spin = 0;
+    ball.spin = releaseSpin;
     ball.stuckTo = null;
     ball.stickTimer = 0;
     ball.storedSpeed = 0;
