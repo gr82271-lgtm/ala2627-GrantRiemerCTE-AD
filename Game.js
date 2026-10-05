@@ -2,14 +2,15 @@ const canvas = document.getElementById('pong-canvas');
 const scoreLeft = document.getElementById('score-left');
 const scoreRight = document.getElementById('score-right');
 const gameMessage = document.getElementById('game-message');
-const restartButton = document.getElementById('restart-pong');
+const abortButton = document.getElementById('abort-game');
 
-if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
+if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
   const height = canvas.height;
   const activationHits = 3;
   const powerShotHits = 5;
+  const roundGoal = 3;
 
   const leftPaddle = { x: 18, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
   const rightPaddle = { x: width - 32, y: height / 2 - 55, width: 14, height: 110, speed: 430, vy: 0, activated: false, charge: 0 };
@@ -34,8 +35,6 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   let leftScore = 0;
   let rightScore = 0;
-  let leftMatchWins = 0;
-  let rightMatchWins = 0;
   let roundNumber = 1;
   let leftPowerChoice = null;
   let rightPowerChoice = null;
@@ -98,7 +97,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     });
     marketplace.classList.remove('hidden');
     running = false;
-    gameMessage.textContent = 'Round complete. Choose a power-up for each side.';
+    gameMessage.textContent = `Round ${roundNumber} complete. Choose a power-up for each side.`;
   }
 
   function startNextRound() {
@@ -122,13 +121,9 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
 
   function closePowerupMarket() {
     hideMarketplace();
-    if (leftMatchWins >= 2 || rightMatchWins >= 2) {
-      gameMessage.textContent = leftMatchWins > rightMatchWins ? 'Left side wins the best-of-three! Press Restart to play again.' : 'Right side wins the best-of-three! Press Restart to play again.';
-      running = false;
-      return;
-    }
+    roundNumber += 1;
     running = true;
-    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Left activation: ${hitsToCharge(leftPaddle)} hits; right activation: ${hitsToCharge(rightPaddle)} hits.`;
+    gameMessage.textContent = `Round ${roundNumber} — First to ${roundGoal} points. Left activation: ${hitsToCharge(leftPaddle)} hits; right activation: ${hitsToCharge(rightPaddle)} hits.`;
     leftScore = 0;
     rightScore = 0;
     updateScore();
@@ -232,7 +227,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     const direction = paddle === leftPaddle ? 1 : -1;
     const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
     const powerChoice = paddle === leftPaddle ? leftPowerChoice : rightPowerChoice;
-    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 0.8 : 2;
+    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 1.5 : 2;
     const releaseSpeed = currentSpeed * releaseMultiplier;
     const launchAngle = Math.atan(impact * 0.7);
     let releaseSpin = 0;
@@ -364,23 +359,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
       resetBall(-1);
     }
 
-    if (leftScore >= 7 || rightScore >= 7) {
+    if (leftScore >= roundGoal || rightScore >= roundGoal) {
       const roundWinner = leftScore > rightScore ? 'left' : 'right';
-      if (roundWinner === 'left') {
-        leftMatchWins += 1;
-      } else {
-        rightMatchWins += 1;
-      }
-
       running = false;
-      gameMessage.textContent = `${roundWinner === 'left' ? 'Left' : 'Right'} side wins the round.`;
-
-      if (leftMatchWins >= 2 || rightMatchWins >= 2) {
-        const matchWinner = leftMatchWins > rightMatchWins ? 'Left side wins the best-of-three!' : 'Right side wins the best-of-three!';
-        gameMessage.textContent = `${matchWinner} Press Restart to play again.`;
-      } else {
-        showMarketplace();
-      }
+      gameMessage.textContent = `${roundWinner === 'left' ? 'Left' : 'Right'} side wins round ${roundNumber}. Choose a power-up for the next round.`;
+      showMarketplace();
     }
   }
 
@@ -452,15 +435,13 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
   function resetGame() {
     leftScore = 0;
     rightScore = 0;
-    leftMatchWins = 0;
-    rightMatchWins = 0;
     roundNumber = 1;
     leftPowerChoice = null;
     rightPowerChoice = null;
     running = true;
     particles.length = 0;
     hideMarketplace();
-    gameMessage.textContent = `Round ${roundNumber} — First to 7 points. Hit ${activationHits} times to charge activation (Power Shot: ${powerShotHits}). Left: W/S move, D activate. Right: O/L move, K activate.`;
+    gameMessage.textContent = `Round ${roundNumber} — First to ${roundGoal} points. Hit ${activationHits} times to charge activation (Power Shot: ${powerShotHits}). Left: W/S move, D activate. Right: O/L move, K activate.`;
     updateScore();
     resetBall(Math.random() > 0.5 ? 1 : -1);
     leftPaddle.y = height / 2 - leftPaddle.height / 2;
@@ -501,7 +482,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && restartButton) {
     }
   });
 
-  restartButton.addEventListener('click', () => {
+  abortButton.addEventListener('click', () => {
     resetGame();
   });
 

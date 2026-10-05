@@ -510,7 +510,7 @@ h2 em {
   text-transform: uppercase;
 }
 
-.restart-button {
+.abort-button {
   padding: .7rem 1.2rem;
   border: none;
   border-radius: 999px;
