@@ -55,6 +55,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       label: 'Curve-Ball',
       description: 'Increase your curve.'
     },
+    decoy: {
+      label: 'Decoy',
+      description: '3-hit charge. Fires 1 red ball and 2 white decoys to confuse the opponent.'
+    },
     baloon: {
       label: 'Baloon',
       description: 'Increase the ball size by 5% when it is on your half.'
@@ -452,9 +456,22 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   }
 
   function updateBallSizeForPowerups() {
-    const leftBalloon = getPowerChoiceForPaddle(leftPaddle) === 'baloon' && ball.x < width / 2;
-    const rightBalloon = getPowerChoiceForPaddle(rightPaddle) === 'baloon' && ball.x > width / 2;
-    ball.radius = leftBalloon || rightBalloon ? ball.baseRadius * 1.05 : ball.baseRadius;
+    const leftBalloon = getPowerChoiceForPaddle(leftPaddle) === 'baloon';
+    const rightBalloon = getPowerChoiceForPaddle(rightPaddle) === 'baloon';
+    const inLeftHalf = ball.x < width / 2;
+    const inRightHalf = ball.x > width / 2;
+
+    if ((leftBalloon && inLeftHalf) || (rightBalloon && inRightHalf)) {
+      ball.radius = ball.baseRadius * 1.05;
+      return;
+    }
+
+    if (leftBalloon || rightBalloon) {
+      ball.radius = ball.baseRadius * 0.95;
+      return;
+    }
+
+    ball.radius = ball.baseRadius;
   }
 
   function updateBall(dt) {
