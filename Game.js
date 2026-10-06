@@ -649,6 +649,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (event.repeat) {
+      if (key in keys) {
+        keys[key] = true;
+      }
+      return;
+    }
     if (key === 'd' && leftPaddle.charge === hitsToCharge(leftPaddle)) {
       activatePaddle(leftPaddle);
     }
