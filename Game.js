@@ -339,6 +339,30 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     updateHackBar(rightPaddle);
   }
 
+  function addPowerupChoice(side, optionKey) {
+    const targetChoices = side === 'left' ? leftPowerChoices : rightPowerChoices;
+    if (!targetChoices.includes(optionKey)) {
+      targetChoices.push(optionKey);
+    }
+  }
+
+  function activateSelectedPowerup(side, optionKey) {
+    const paddle = side === 'left' ? leftPaddle : rightPaddle;
+    const targetChoices = side === 'left' ? leftPowerChoices : rightPowerChoices;
+
+    addPowerupChoice(side, optionKey);
+
+    if (optionKey === 'hack') {
+      paddle.activated = true;
+      paddle.hackMeter = 0;
+      updateHackBar(paddle);
+    }
+
+    if (!targetChoices.includes(optionKey)) {
+      targetChoices.push(optionKey);
+    }
+  }
+
   function marketPlaceSelectionsToUi() {
     powerupButtons.forEach((button) => {
       const side = button.dataset.side;
@@ -357,20 +381,16 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const alreadySelected = targetChoices.includes(value);
 
     if (alreadySelected) {
-      const index = targetChoices.indexOf(value);
-      targetChoices.splice(index, 1);
-      const starterIndex = starterChoices.indexOf(value);
-      if (starterIndex >= 0) {
-        starterChoices.splice(starterIndex, 1);
-      }
-      button.classList.remove('selected');
-    } else {
-      targetChoices.push(value);
-      if (roundNumber === 1 && !starterChoices.includes(value) && targetChoices.length <= 3) {
-        starterChoices.push(value);
-      }
-      button.classList.add('selected');
+      activateSelectedPowerup(side, value);
+      marketPlaceSelectionsToUi();
+      return;
     }
+
+    addPowerupChoice(side, value);
+    if (roundNumber === 1 && !starterChoices.includes(value) && targetChoices.length <= 3) {
+      starterChoices.push(value);
+    }
+    button.classList.add('selected');
 
     marketPlaceSelectionsToUi();
 
