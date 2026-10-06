@@ -22,6 +22,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     x: width / 2,
     y: height / 2,
     radius: 10,
+    baseRadius: 10,
     vx: 340,
     vy: 180,
     spin: 0,
@@ -46,6 +47,25 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     'curve-shot': {
       label: 'Curve Shot',
       description: '50% faster launch. Adds a random 30-degree reverse curve to the ball.'
+    }
+  };
+
+  const nonRarePowerUpCatalog = {
+    'curve-ball': {
+      label: 'Curve-Ball',
+      description: 'Increase your curve.'
+    },
+    baloon: {
+      label: 'Baloon',
+      description: 'Increase the ball size by 5% when it is on your half.'
+    },
+    'quick-draw': {
+      label: 'Quick Draw',
+      description: 'Decrease time stuck to your paddle by 10%.'
+    },
+    'speed-up': {
+      label: 'Speed Up',
+      description: 'Increase your paddle speed.'
     }
   };
   let powerupButtons = document.querySelectorAll('.powerup-option');
@@ -100,8 +120,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     return copy;
   }
 
+  function getPowerupConfig(optionKey) {
+    return powerUpCatalog[optionKey] || nonRarePowerUpCatalog[optionKey];
+  }
+
   function createPowerupOption(side, optionKey) {
-    const config = powerUpCatalog[optionKey];
+    const config = getPowerupConfig(optionKey);
     const details = document.createElement('details');
     details.className = 'powerup-option';
     details.dataset.side = side;
@@ -119,24 +143,6 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     return details;
   }
 
-  function createPlaceholderPowerupOption(side) {
-    const details = document.createElement('details');
-    details.className = 'powerup-option placeholder-powerup';
-    details.dataset.side = side;
-    details.dataset.option = 'placeholder';
-
-    const summary = document.createElement('summary');
-    summary.textContent = 'Powerup';
-    details.appendChild(summary);
-
-    const description = document.createElement('div');
-    description.className = 'powerup-description';
-    description.textContent = 'Placeholder for a future power-up.';
-    details.appendChild(description);
-
-    return details;
-  }
-
   function renderMarketplace() {
     const sideLists = document.querySelectorAll('.market-side .powerup-list');
     const isStarterMarketplace = roundNumber === 1;
@@ -149,16 +155,13 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       const side = index === 0 ? 'left' : 'right';
       list.innerHTML = '';
 
-      if (isStarterMarketplace) {
-        const randomizedKeys = shuffleList(Object.keys(powerUpCatalog));
-        randomizedKeys.forEach((key) => {
-          list.appendChild(createPowerupOption(side, key));
-        });
-      } else {
-        for (let itemIndex = 0; itemIndex < 5; itemIndex += 1) {
-          list.appendChild(createPlaceholderPowerupOption(side));
-        }
-      }
+      const shopKeys = isStarterMarketplace
+        ? shuffleList(Object.keys(powerUpCatalog))
+        : shuffleList(Object.keys(nonRarePowerUpCatalog)).slice(0, 3);
+
+      shopKeys.forEach((key) => {
+        list.appendChild(createPowerupOption(side, key));
+      });
     });
 
     powerupButtons = document.querySelectorAll('.powerup-option');
@@ -174,6 +177,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   function resetBall(direction = 1) {
     ball.x = width / 2;
     ball.y = height / 2;
+    ball.radius = ball.baseRadius;
     const vertical = (Math.random() * 2 - 1) * 180;
     const speed = 360;
     ball.vx = direction * speed;
@@ -307,8 +311,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const leftY = leftPaddle.y;
     const rightY = rightPaddle.y;
 
-    leftPaddle.speed = getPowerChoiceForPaddle(leftPaddle) === 'drone' && leftPaddle.activated ? leftPaddle.baseSpeed * 0.9 : leftPaddle.baseSpeed;
-    rightPaddle.speed = getPowerChoiceForPaddle(rightPaddle) === 'drone' && rightPaddle.activated ? rightPaddle.baseSpeed * 0.9 : rightPaddle.baseSpeed;
+    const leftSpeedBoost = getPowerChoiceForPaddle(leftPaddle) === 'speed-up' ? 1.2 : 1;
+    const rightSpeedBoost = getPowerChoiceForPaddle(rightPaddle) === 'speed-up' ? 1.2 : 1;
+
+    leftPaddle.speed = leftPaddle.baseSpeed * leftSpeedBoost;
+    rightPaddle.speed = rightPaddle.baseSpeed * rightSpeedBoost;
 
     leftPaddle.y = clamp(leftPaddle.y + leftMove * leftPaddle.speed * dt, 0, height - leftPaddle.height);
     rightPaddle.y = clamp(rightPaddle.y + rightMove * rightPaddle.speed * dt, 0, height - rightPaddle.height);
@@ -399,7 +406,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const direction = paddle === leftPaddle ? 1 : -1;
     const impact = (ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2);
     const powerChoice = getPowerChoiceForPaddle(paddle);
-    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 1.5 : powerChoice === 'drone' ? 1.2 : 2;
+    const releaseMultiplier = powerChoice === 'power-shot' ? 3 : powerChoice === 'decoy' ? 1 : powerChoice === 'curve-shot' ? 1.5 : powerChoice === 'curve-ball' ? 1.8 : 2;
     const releaseSpeed = currentSpeed * releaseMultiplier;
     const launchAngle = Math.atan(impact * 0.7);
     let releaseSpin = 0;
@@ -427,12 +434,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     } else if (powerChoice === 'power-shot') {
       ball.vx = direction * releaseSpeed * Math.cos(launchAngle);
       ball.vy = releaseSpeed * Math.sin(launchAngle);
-    } else if (powerChoice === 'curve-shot') {
+    } else if (powerChoice === 'curve-shot' || powerChoice === 'curve-ball') {
       const curveDirection = Math.random() < 0.5 ? -1 : 1;
-      const curveAngle = Math.PI / 6;
+      const curveAngle = powerChoice === 'curve-ball' ? Math.PI / 5 : Math.PI / 6;
       ball.vx = direction * releaseSpeed * Math.cos(curveAngle);
       ball.vy = curveDirection * releaseSpeed * Math.sin(curveAngle);
-      releaseSpin = -curveDirection * releaseSpeed * 2.5;
+      releaseSpin = -curveDirection * releaseSpeed * (powerChoice === 'curve-ball' ? 3.4 : 2.5);
     } else {
       ball.vx = direction * releaseSpeed;
       ball.vy = impact * releaseSpeed * 0.7;
@@ -442,6 +449,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     ball.stickTimer = 0;
     ball.storedSpeed = 0;
     spawnParticles(ball.x, ball.y, hotColor);
+  }
+
+  function updateBallSizeForPowerups() {
+    const leftBalloon = getPowerChoiceForPaddle(leftPaddle) === 'baloon' && ball.x < width / 2;
+    const rightBalloon = getPowerChoiceForPaddle(rightPaddle) === 'baloon' && ball.x > width / 2;
+    ball.radius = leftBalloon || rightBalloon ? ball.baseRadius * 1.05 : ball.baseRadius;
   }
 
   function updateBall(dt) {
@@ -470,6 +483,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     ball.spin *= Math.exp(-1.3 * dt);
     ball.x += ball.vx * dt;
     ball.y += ball.vy * dt;
+    updateBallSizeForPowerups();
 
     if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= height) {
       ball.vy *= -1;
@@ -497,7 +511,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
       if (leftPaddle.activated) {
         ball.stuckTo = leftPaddle;
-        ball.stickTimer = 1;
+        ball.stickTimer = getPowerChoiceForPaddle(leftPaddle) === 'quick-draw' ? 0.9 : 1;
         ball.storedSpeed = Math.hypot(ball.vx, ball.vy);
         ball.vx = 0;
         ball.vy = 0;
@@ -535,7 +549,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
       if (rightPaddle.activated) {
         ball.stuckTo = rightPaddle;
-        ball.stickTimer = 1;
+        ball.stickTimer = getPowerChoiceForPaddle(rightPaddle) === 'quick-draw' ? 0.9 : 1;
         ball.storedSpeed = Math.hypot(ball.vx, ball.vy);
         ball.vx = 0;
         ball.vy = 0;
