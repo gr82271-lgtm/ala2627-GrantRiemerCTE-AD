@@ -279,8 +279,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   }
 
   function updatePaddles(dt) {
-    const leftDir = (keys.w ? -1 : 0) + (keys.s ? 1 : 0);
-    const rightDir = (keys.o ? -1 : 0) + (keys.l ? 1 : 0);
+    const leftMove = (keys.w ? -1 : 0) + (keys.s ? 1 : 0);
+    const rightMove = (keys.o ? -1 : 0) + (keys.l ? 1 : 0);
 
     const leftY = leftPaddle.y;
     const rightY = rightPaddle.y;
@@ -288,8 +288,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     leftPaddle.speed = getPowerChoiceForPaddle(leftPaddle) === 'drone' && leftPaddle.activated ? leftPaddle.baseSpeed * 0.9 : leftPaddle.baseSpeed;
     rightPaddle.speed = getPowerChoiceForPaddle(rightPaddle) === 'drone' && rightPaddle.activated ? rightPaddle.baseSpeed * 0.9 : rightPaddle.baseSpeed;
 
-    leftPaddle.y = clamp(leftPaddle.y + leftDir * leftPaddle.speed * dt, 0, height - leftPaddle.height);
-    rightPaddle.y = clamp(rightPaddle.y + rightDir * rightPaddle.speed * dt, 0, height - rightPaddle.height);
+    leftPaddle.y = clamp(leftPaddle.y + leftMove * leftPaddle.speed * dt, 0, height - leftPaddle.height);
+    rightPaddle.y = clamp(rightPaddle.y + rightMove * rightPaddle.speed * dt, 0, height - rightPaddle.height);
     leftPaddle.vy = (leftPaddle.y - leftY) / dt;
     rightPaddle.vy = (rightPaddle.y - rightY) / dt;
   }
@@ -425,13 +425,15 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   function updateBall(dt) {
     if (ball.stuckTo) {
       const paddle = ball.stuckTo;
-      const controlDirection = paddle === leftPaddle ? ((keys.w ? -1 : 0) + (keys.s ? 1 : 0)) : ((keys.o ? -1 : 0) + (keys.l ? 1 : 0));
+      const controlDirection = paddle === leftPaddle
+        ? (keys.w ? -1 : 0) + (keys.s ? 1 : 0)
+        : (keys.o ? -1 : 0) + (keys.l ? 1 : 0);
       ball.x = paddle === leftPaddle ? paddle.x + paddle.width + ball.radius : paddle.x - ball.radius;
       ball.y = paddle.y + paddle.height / 2;
       ball.vx = 0;
       ball.vy = 0;
       if (getPowerChoiceForPaddle(paddle) === 'drone') {
-        ball.y = clamp(ball.y + controlDirection * 220 * dt, ball.radius, height - ball.radius);
+        ball.y = clamp(ball.y + controlDirection * 240 * dt, ball.radius, height - ball.radius);
         ball.vy = controlDirection * 260;
       }
       ball.stickTimer -= dt;
