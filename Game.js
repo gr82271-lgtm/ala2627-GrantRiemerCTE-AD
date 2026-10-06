@@ -34,7 +34,29 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   const particles = [];
   const decoyBalls = [];
   const marketplace = document.getElementById('powerup-marketplace');
-  const powerupButtons = document.querySelectorAll('.powerup-option');
+  const powerUpCatalog = {
+    'power-shot': {
+      label: 'Power Shot',
+      description: '5-hit charge. Launches at 3x speed for a stronger strike.'
+    },
+    decoy: {
+      label: 'Decoy',
+      description: '3-hit charge. Fires 1 red ball and 2 white decoys to confuse the opponent.'
+    },
+    'curve-shot': {
+      label: 'Curve Shot',
+      description: '50% faster launch. Adds a random 30-degree reverse curve to the ball.'
+    },
+    drone: {
+      label: 'Drone',
+      description: '10% slower paddle speed. You can steer the ball up and down with your paddle controls while it is held.'
+    },
+    hack: {
+      label: 'Hack',
+      description: 'When activated, the ball does not stick to your paddle. A bar fills for 5 seconds, then the other screen is distorted.'
+    }
+  };
+  let powerupButtons = document.querySelectorAll('.powerup-option');
 
   let leftScore = 0;
   let rightScore = 0;
@@ -75,6 +97,53 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       paddle.hackMeter = 0;
       updateHackBar(paddle);
     }
+  }
+
+  function shuffleList(items) {
+    const copy = [...items];
+    for (let index = copy.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+    }
+    return copy;
+  }
+
+  function createPowerupOption(side, optionKey) {
+    const config = powerUpCatalog[optionKey];
+    const details = document.createElement('details');
+    details.className = 'powerup-option';
+    details.dataset.side = side;
+    details.dataset.option = optionKey;
+
+    const summary = document.createElement('summary');
+    summary.textContent = config.label;
+    details.appendChild(summary);
+
+    const description = document.createElement('div');
+    description.className = 'powerup-description';
+    description.textContent = config.description;
+    details.appendChild(description);
+
+    return details;
+  }
+
+  function renderMarketplace() {
+    const sideLists = document.querySelectorAll('.market-side .powerup-list');
+    const allKeys = Object.keys(powerUpCatalog);
+
+    sideLists.forEach((list, index) => {
+      const randomizedKeys = shuffleList(allKeys);
+      list.innerHTML = '';
+      randomizedKeys.forEach((key) => {
+        const side = index === 0 ? 'left' : 'right';
+        list.appendChild(createPowerupOption(side, key));
+      });
+    });
+
+    powerupButtons = document.querySelectorAll('.powerup-option');
+    powerupButtons.forEach((button) => {
+      button.addEventListener('click', handlePowerUpChoice);
+    });
   }
 
   function clamp(value, min, max) {
@@ -124,6 +193,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
 
   function showMarketplace() {
     if (!marketplace) return;
+    renderMarketplace();
     leftPowerChoice = null;
     rightPowerChoice = null;
     powerupButtons.forEach((button) => {
@@ -573,9 +643,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     updateHackBar(rightPaddle);
   }
 
-  powerupButtons.forEach((button) => {
-    button.addEventListener('click', handlePowerUpChoice);
-  });
+  renderMarketplace();
 
   document.addEventListener('keydown', (event) => {
     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
