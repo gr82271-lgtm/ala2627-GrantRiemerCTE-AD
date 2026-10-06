@@ -79,11 +79,17 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   let roundNumber = 1;
   let leftPowerChoices = [];
   let rightPowerChoices = [];
+  let leftStarterPowerChoices = [];
+  let rightStarterPowerChoices = [];
   let running = true;
   let lastTime = 0;
 
   function getPowerChoicesForPaddle(paddle) {
     return paddle === leftPaddle ? leftPowerChoices : rightPowerChoices;
+  }
+
+  function getStarterPowerChoicesForPaddle(paddle) {
+    return paddle === leftPaddle ? leftStarterPowerChoices : rightStarterPowerChoices;
   }
 
   function getPowerChoiceForPaddle(paddle) {
@@ -156,6 +162,45 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     return details;
   }
 
+  function getSelectedPowerupDisplay(side) {
+    const currentChoices = side === 'left' ? leftPowerChoices : rightPowerChoices;
+    const starterChoices = side === 'left' ? leftStarterPowerChoices : rightStarterPowerChoices;
+
+    if (currentChoices.length === 0) {
+      return 'No power-ups selected';
+    }
+
+    return currentChoices
+      .map((optionKey) => {
+        const config = getPowerupConfig(optionKey);
+        const label = config ? config.label : optionKey;
+        return starterChoices.includes(optionKey) ? `<strong>${label}</strong>` : label;
+      })
+      .join(', ');
+  }
+
+  function updateSelectedPowerupDisplays() {
+    document.querySelectorAll('.market-side').forEach((marketSide) => {
+      const side = marketSide.querySelector('.powerup-list')?.parentElement === marketSide ? (marketSide.classList.contains('right-side') ? 'right' : 'left') : marketSide.dataset.side;
+      const selectedDisplay = marketSide.querySelector('.selected-powerup-list');
+      const displayContent = document.createElement('div');
+      displayContent.className = 'selected-powerup-list';
+      displayContent.innerHTML = `${side === 'left' ? 'Left' : 'Right'} selected: ${getSelectedPowerupDisplay(side)}`;
+
+      if (selectedDisplay) {
+        selectedDisplay.replaceWith(displayContent);
+      } else {
+        marketSide.appendChild(displayContent);
+      }
+    });
+
+    powerupButtons.forEach((button) => {
+      const side = button.dataset.side;
+      const optionKey = button.dataset.option;
+      button.classList.toggle('selected', (side === 'left' ? leftPowerChoices : rightPowerChoices).includes(optionKey));
+    });
+  }
+
   function renderMarketplace() {
     const sideLists = document.querySelectorAll('.market-side .powerup-list');
     const isStarterMarketplace = roundNumber === 1;
@@ -173,9 +218,13 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
         : shuffleList(Object.keys(nonRarePowerUpCatalog)).slice(0, 3);
 
       shopKeys.forEach((key) => {
-        list.appendChild(createPowerupOption(side, key));
+        const option = createPowerupOption(side, key);
+        option.classList.toggle('selected', (side === 'left' ? leftPowerChoices : rightPowerChoices).includes(key));
+        list.appendChild(option);
       });
     });
+
+    updateSelectedPowerupDisplays();
 
     powerupButtons = document.querySelectorAll('.powerup-option');
     powerupButtons.forEach((button) => {
@@ -232,13 +281,12 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   function showMarketplace() {
     if (!marketplace) return;
     renderMarketplace();
-    leftPowerChoices = [];
-    rightPowerChoices = [];
     powerupButtons.forEach((button) => {
       button.classList.remove('selected');
       button.removeAttribute('open');
       button.disabled = false;
     });
+    marketPlaceSelectionsToUi();
     marketplace.classList.remove('hidden');
     running = false;
     const starterText = roundNumber === 1 ? 'Choose your starter powerups for each side.' : 'Choose one or more power-ups for each side.';
@@ -290,21 +338,40 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     updateHackBar(rightPaddle);
   }
 
+  function marketPlaceSelectionsToUi() {
+    powerupButtons.forEach((button) => {
+      const side = button.dataset.side;
+      const optionKey = button.dataset.option;
+      button.classList.toggle('selected', (side === 'left' ? leftPowerChoices : rightPowerChoices).includes(optionKey));
+    });
+    updateSelectedPowerupDisplays();
+  }
+
   function handlePowerUpChoice(event) {
     const button = event.currentTarget;
     const side = button.dataset.side;
     const value = button.dataset.option;
     const targetChoices = side === 'left' ? leftPowerChoices : rightPowerChoices;
+    const starterChoices = side === 'left' ? leftStarterPowerChoices : rightStarterPowerChoices;
     const alreadySelected = targetChoices.includes(value);
 
     if (alreadySelected) {
       const index = targetChoices.indexOf(value);
       targetChoices.splice(index, 1);
+      const starterIndex = starterChoices.indexOf(value);
+      if (starterIndex >= 0) {
+        starterChoices.splice(starterIndex, 1);
+      }
       button.classList.remove('selected');
     } else {
       targetChoices.push(value);
+      if (roundNumber === 1 && !starterChoices.includes(value) && targetChoices.length <= 3) {
+        starterChoices.push(value);
+      }
       button.classList.add('selected');
     }
+
+    marketPlaceSelectionsToUi();
 
     if (leftPowerChoices.length > 0 && rightPowerChoices.length > 0) {
       setTimeout(() => {
@@ -681,6 +748,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     roundNumber = 1;
     leftPowerChoices = [];
     rightPowerChoices = [];
+    leftStarterPowerChoices = [];
+    rightStarterPowerChoices = [];
     running = true;
     particles.length = 0;
     leftPaddle.hackMeter = 0;
