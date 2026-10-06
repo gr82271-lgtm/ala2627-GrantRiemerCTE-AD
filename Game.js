@@ -35,6 +35,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   const particles = [];
   const decoyBalls = [];
   const marketplace = document.getElementById('powerup-marketplace');
+  let screenShake = 0;
   const powerUpCatalog = {
     'power-shot': {
       label: 'Power Shot',
@@ -54,10 +55,6 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     'curve-ball': {
       label: 'Curve-Ball',
       description: 'Increase your curve.'
-    },
-    decoy: {
-      label: 'Decoy',
-      description: '3-hit charge. Fires 1 red ball and 2 white decoys to confuse the opponent.'
     },
     baloon: {
       label: 'Baloon',
@@ -252,16 +249,20 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     decoyBalls.length = 0;
   }
 
-  function spawnParticles(x, y, color = hotColor) {
-    for (let i = 0; i < 12; i += 1) {
+  function spawnParticles(x, y, color = hotColor, burstScale = 1) {
+    const particleCount = 16 + Math.round(Math.random() * 12 * burstScale);
+    for (let i = 0; i < particleCount; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (40 + Math.random() * 220) * burstScale;
       particles.push({
         x,
         y,
-        vx: (Math.random() - 0.5) * 180,
-        vy: (Math.random() - 0.5) * 160,
-        life: 0.4 + Math.random() * 0.35,
-        maxLife: 0.4 + Math.random() * 0.35,
-        size: 2 + Math.random() * 3,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0.55 + Math.random() * 0.85,
+        maxLife: 0.55 + Math.random() * 0.85,
+        size: 2 + Math.random() * 5,
+        drag: 0.94 + Math.random() * 0.04,
         color
       });
     }
@@ -450,7 +451,9 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       particle.life -= dt;
       particle.x += particle.vx * dt;
       particle.y += particle.vy * dt;
-      particle.vy += 90 * dt;
+      particle.vx *= particle.drag;
+      particle.vy *= particle.drag;
+      particle.vy += 180 * dt;
 
       if (particle.life <= 0) {
         particles.splice(i, 1);
@@ -475,6 +478,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     }
   }
 
+  function triggerPowerShotShake(amount = 12) {
+    screenShake = Math.max(screenShake, amount);
+  }
+
   function releaseStuckBall(paddle) {
     const currentSpeed = Math.max(ball.storedSpeed || Math.hypot(ball.vx, ball.vy), 1);
     const direction = paddle === leftPaddle ? 1 : -1;
@@ -487,6 +494,10 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     const releaseSpeed = currentSpeed * releaseMultiplier;
     const launchAngle = Math.atan(impact * 0.7);
     let releaseSpin = 0;
+
+    if (hasPowerShot) {
+      triggerPowerShotShake(16);
+    }
 
     decoyBalls.length = 0;
     ball.decoyMode = hasDecoy;
@@ -525,7 +536,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     ball.stuckTo = null;
     ball.stickTimer = 0;
     ball.storedSpeed = 0;
-    spawnParticles(ball.x, ball.y, hotColor);
+    spawnParticles(ball.x, ball.y, hotColor, hasPowerShot ? 1.8 : 1);
   }
 
   function updateBallSizeForPowerups() {
@@ -688,6 +699,11 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
   }
 
   function drawField() {
+    ctx.save();
+    const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+    ctx.translate(shakeX, shakeY);
+
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, width, height);
@@ -724,6 +740,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = ball.decoyMode ? '#ef4444' : '#f8fafc';
     ctx.fill();
+    ctx.restore();
   }
 
   function loop(timestamp) {
@@ -737,6 +754,7 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
       updateDecoyBalls(dt);
     }
 
+    screenShake = Math.max(0, screenShake - dt * 45);
     updateParticles(dt);
     drawField();
     requestAnimationFrame(loop);
@@ -756,6 +774,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     rightPaddle.hackMeter = 0;
     leftPaddle.distortionTimer = 0;
     rightPaddle.distortionTimer = 0;
+    screenShake = 0;
+    screenShake = 0;
     canvas.style.filter = '';
     hideMarketplace();
     gameMessage.textContent = `Round ${roundNumber} — First to ${roundGoal} points. Hit ${activationHits} times to charge activation (Power Shot: ${powerShotHits}). Left: W/S move, D activate. Right: O/L move, K activate.`;
