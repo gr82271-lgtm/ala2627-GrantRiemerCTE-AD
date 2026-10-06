@@ -46,14 +46,6 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     'curve-shot': {
       label: 'Curve Shot',
       description: '50% faster launch. Adds a random 30-degree reverse curve to the ball.'
-    },
-    drone: {
-      label: 'Drone',
-      description: '10% slower paddle speed. You can steer the ball up and down with your paddle controls while it is held.'
-    },
-    hack: {
-      label: 'Hack',
-      description: 'When activated, the ball does not stick to your paddle. A bar fills for 5 seconds, then the other screen is distorted.'
     }
   };
   let powerupButtons = document.querySelectorAll('.powerup-option');
@@ -127,17 +119,46 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     return details;
   }
 
+  function createPlaceholderPowerupOption(side) {
+    const details = document.createElement('details');
+    details.className = 'powerup-option placeholder-powerup';
+    details.dataset.side = side;
+    details.dataset.option = 'placeholder';
+
+    const summary = document.createElement('summary');
+    summary.textContent = 'Powerup';
+    details.appendChild(summary);
+
+    const description = document.createElement('div');
+    description.className = 'powerup-description';
+    description.textContent = 'Placeholder for a future power-up.';
+    details.appendChild(description);
+
+    return details;
+  }
+
   function renderMarketplace() {
     const sideLists = document.querySelectorAll('.market-side .powerup-list');
-    const allKeys = Object.keys(powerUpCatalog);
+    const isStarterMarketplace = roundNumber === 1;
+    const marketplaceTitle = document.getElementById('marketplace-title');
+    if (marketplaceTitle) {
+      marketplaceTitle.textContent = isStarterMarketplace ? 'Starter powerups' : 'Powerups';
+    }
 
     sideLists.forEach((list, index) => {
-      const randomizedKeys = shuffleList(allKeys);
+      const side = index === 0 ? 'left' : 'right';
       list.innerHTML = '';
-      randomizedKeys.forEach((key) => {
-        const side = index === 0 ? 'left' : 'right';
-        list.appendChild(createPowerupOption(side, key));
-      });
+
+      if (isStarterMarketplace) {
+        const randomizedKeys = shuffleList(Object.keys(powerUpCatalog));
+        randomizedKeys.forEach((key) => {
+          list.appendChild(createPowerupOption(side, key));
+        });
+      } else {
+        for (let itemIndex = 0; itemIndex < 5; itemIndex += 1) {
+          list.appendChild(createPlaceholderPowerupOption(side));
+        }
+      }
     });
 
     powerupButtons = document.querySelectorAll('.powerup-option');
@@ -203,7 +224,8 @@ if (canvas && scoreLeft && scoreRight && gameMessage && abortButton) {
     });
     marketplace.classList.remove('hidden');
     running = false;
-    gameMessage.textContent = `Round ${roundNumber} complete. Choose a power-up for each side.`;
+    const starterText = roundNumber === 1 ? 'Choose your starter powerups for each side.' : 'Choose a power-up for each side.';
+    gameMessage.textContent = `Round ${roundNumber} complete. ${starterText}`;
   }
 
   function startNextRound() {
